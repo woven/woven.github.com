@@ -1,1 +1,143 @@
-<h1>Woven Github pages - yay</h1>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Woven</title>
+
+    <link rel="stylesheet" href="bootstrap.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <article class="blog-post">
+      <h1>Our experience with building a real-time platform on Dart</h1>
+
+      <div class="head-notes">
+        <time pubdate datetime="2013-03-16">Tuesday, March 26, 2013</time>
+        by
+        <a href="https://github.com/kaisellgren" rel="author">Kai Sellgren</a>, <a href="http://www.davidnotik.com/" rel="author">David Notik</a>.
+      </div>
+
+      <h2>Introduction</h2>
+      <p>David fills in.</p>
+
+      <h2>Our Dart stack</h2>
+      <p>We are using tools and technology that are perhaps most familiar to Dart programmers. Let's have a closer look at each key technology we use or ideology we apply:</p>
+
+      <h3>MongoDB</h3>
+      <p>The database choice you make is important and nowadays we have plenty of choices ranging from relational databases
+        to graph and document based databases. We chose MongoDB not because <a href="http://www.youtube.com/watch?v=b2F-DItXtZs">"MongoDB
+        is web scale"</a>, but mainly because it's document-based (allows for things like embedded documents, which is useful for us),
+        has a rather good support in the Dart world and we are familiar with it.</p>
+
+      <p>The document-based data model has been helpful for us, because it has allowed us to have richer data structures holding arrays
+        or other embedded documents. The ability to do deep queries on documents is very helpful and the query language is almost as powerful as SQL.</p>
+
+      <p>We are using <a href="https://github.com/vadimtsushko/mongo_dart">Mongo-dart</a> and <a href="https://github.com/vadimtsushko/objectory">Objectory</a> by <a href="https://github.com/vadimtsushko">Вадим Цушко</a> (Vadim Tsushko).</p>
+
+      <h3>Web UI</h3>
+      <p>What could we possibly do without Web UI? We are using Web UI heavily in our application. All rendering is based on Web UI and occur on the client.
+        We have 38 web components in our application at the time of writing this. When <a href="https://github.com/dart-lang/web-ui/issues/107">this bug</a> is solved,
+        we may incorporate initial-page rendering on the server.</p>
+
+      <h3>Git</h3>
+      <p>We use Git for everything. Currently we work on master and use tags every now and then. In fact, we use the popular <a href="http:/github.com">Github</a> service for our project, which is private.</p>
+
+      <h3>Issue tracking with Asana</h3>
+      <p>This is not exactly specific to our project "stack", but I believe they still earn a mention. So, here we ago: we use <a href="http://asana.com">Asana</a> for issue tracking.</p>
+
+      <h2>Architecture, problems and solutions</h2>
+
+      <h3>The real-time aspect</h3>
+      <p>Our platform is built around the concept of real-time. When the platform starts, it initiates a connection to
+        the server using WebSockets. The connection is kept alive during the lifetime of the application. We do not have a single AJAX request nor any page loads at all (despite the initial page load).</p>
+
+      <p>Actually, we have two WebSocket connections at the moment: one for Objectory and one for us.
+        The reason is because the Objectory browser implementation is nice and useful, but we still need to do other application specific requests.
+        We are planning on "merging" them together somehow, but this requires changes to Objectory and therefore this has been delayed so far.</p>
+
+      <p>We have a special class called <code>DataNotification</code>, which is issued by the server to all clients when data changes.
+        The class knows what was edited, and the type of edit that occurred (update, create, delete). Currently notifications are always sent to users, whether they need to know about it or not.
+        We plan on improving the notification system so that it's aware of who need to be notified.</p>
+
+      <p>These data notifications keep the clients always up-to-date. It's not only used for the simple chat feature we have, but for everything.</p>
+
+      <p>If the connections die, the client will try to re-establish the connection. If it worked, the application will continue functioning normally.</p>
+
+      <h3>Complex routing</h3>
+      <p>Routing is needed in pretty much every application. We have routing happening on both the client and the server.</p>
+
+      <p>On the server, we have a routing configuration in YAML which specifies which server-side controllers are responsible for which kind of requests.
+        Controllers can respond to either HTTP or WebSocket requests, or both. In fact, controllers aren't even aware of whether it's a HTTP or a WebSocket request.</p>
+
+      <p>On the client, we kind of have a routing system. Unfortunately, our routing on the client isn't as simple,
+        so we haven't yet been able to pull a nice routing system/configuration. We have features like custom domain names and sub-domains
+        that users can at any time add, and that in turn affects how application should route. In fact, we also have to update DNS records.
+        We are planning on using CloudFlare for this (and are already test driving it on our site). CloudFlare offers an API for updating
+        DNS records or virtually any settings. It also offers CDN-based caching with Gzipped content. Very useful.</p>
+
+      <p>The point is: there are plenty of application-specific routing rules, which are hard to generalize. We do still have a generic routing component
+        that parses our client-side URI's and server-side requests. It can also generate URIs. When it comes to <code><a href="https://github.com/dart-lang/web-ui/issues/158#issuecomment-11267976">&lt;route&gt;</a></code>, I'm not sure if I like it or not, if it even was usable in our case.</p>
+
+      <p>On top of routing, we have server- and client-side dispatchers. Dispatchers are responsible for dispatching the actual action.
+        On the server this means dispatching a controller action with the help of <code>dart:mirrors</code>. On the client, it changes the URI
+        with the <a href="http://diveintohtml5.info/history.html">History API</a> and makes the UI update.</p>
+
+      <p>Our application works perfectly with the backspace (history navigation), and the links in our application never reload the page,
+        but rather make it render the new scene. You can of course copy any link on the application and the link works fine if you go there directly.</p>
+
+      <h3>What about models, views, controllers, presenters, view-models, &lt;insert-here&gt;?</h3>
+      <p>We use Objectory's <code>PersistentObject</code> fashioned database models. We use these models on both the server and the client side.
+        We have a base model that has some little functionality, like automated <code>createdAt</code> field.</p>
+
+      <p>Our views are HTML/web components essentially. On the server we don't render anything at all, at least not right now.</p>
+
+      <p>We aren't entirely sure yet what's the best architectural approach to take with Web Components. For instance, how to implement ViewModels or Controllers the best way on the client.
+        On the server we have controllers with actions responding to client-side requests, whether they are HTTP or WebSocket.</p>
+
+      <h3>Web UI build time</h3>
+      <p>Initially our application built within 0.1 seconds. Then it rose to half a second, a full second and now it takes 1.7 seconds to build on my local.
+        It's not a problem because I happen to have an SSD and it's still fairly quick, but on a server with HDD it takes a few seconds longer.
+        At some point I would hope Web UI to not build the entire thing over and over again when all you do is a small change, but that hasn't been a <em>real</em> problem so far.</p>
+
+      <h3>Deployment</h3>
+      <p>There's no real support for deployment in the Web UI land yet. Incorrect paths and dealing with assets can be a problem.
+        We compile our application under the usual <code>out</code> folder, which seems to be hardcoded anyway. We use the <code>out</code> folder as our "web root".</p>
+
+      <p>The particular controller action, which is responsible for serving the initial page, serves the HTML file from the <code>out</code> folder and dynamically fixes the paths prior to output.
+        We also create a symlink called <code>web/out/assets</code>, which points back to <code>web/assets</code> so that images and such can be referenced properly.</p>
+
+      <h3>Sessions</h3>
+      <p>Since we rely on WebSockets heavily, we noticed that we can't really use the <code>HttpSession</code> class that Dart has, because it's specific to HTTP.
+        We ended up creating our own simple session handler, which works well with both HTTP and WebSocket requests.</p>
+
+      <h3>Keeping up with the SDK</h3>
+      <p>Keeping up your own codebase with the latest versions of SDKs and the breaking changes they introduce is bearable,
+        but as you start having several third-party dependencies, things sometimes get tricky.</p>
+
+      <p>The usual story for us has been to either write temporary fixes while waiting for the real proper fixes, or just patch the library and do a pull request.
+        Later we have tended to wait a few weeks to make sure all is stable for us to jump in, but this isn't always an option because e.g. the Dartium "expires".
+        There may be a way to bypass that expiration, but we haven't looked into it really.</p>
+
+      <p>Now it goes without saying, the Dart community doesn't have years behind it, so things get like this sometimes, and we are eagerly waiting for the brighter future :-).</p>
+
+      <h3>Error handling and exceptions</h3>
+      <p>The biggest problem has to do with exceptions. The two primary pain-points are: lack of global exception handling and useless stack traces.
+        We are eagerly waiting for <a href="https://code.google.com/p/dart/issues/detail?id=5958">global exception handling bug</a> to be fixed.</p>
+
+      <p>When it comes to asynchronous stack traces, this isn't helpful:</p>
+
+      <pre><code>Unhandled exception:
+HttpException: Request to null failed with status 400: Bad Request.
+#0      _FutureImpl._scheduleUnhandledError.<anonymous closure> (dart:async:333:9)
+#1      _Timer._createTimerHandler._handleTimeout (dart:io:7240:28)
+#2      _Timer._createTimerHandler._handleTimeout (dart:io:7248:7)
+#3      _Timer._createTimerHandler.<anonymous closure> (dart:io:7256:23)
+#4      _ReceivePortImpl._handleMessage (dart:isolate-patch:40:92)</code></pre>
+
+      <p>Our application has requests everywhere, sometimes occurring at the same time. The only way to find the problem is to manually comment out code to see when the exception does not occur.</p>
+
+      <p>While I realize that this is a proper stack trace, I want to put emphasis on the fact that developers want to see here an execution flow,
+        potentially across several stacks. This would allow us to trace back to the actual code that caused the issue.</p>
+    </article>
+  </body>
+</html>
