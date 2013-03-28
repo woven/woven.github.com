@@ -40,7 +40,7 @@
         we may incorporate initial-page rendering on the server.</p>
 
       <h3>Git</h3>
-      <p>We use Git for everything. Currently we work on master and use tags every now and then. In fact, we use the popular <a href="http:/github.com">Github</a> service for our project, which is private.</p>
+      <p>We use Git for everything. Currently we work on master and use tags every now and then. In fact, we use the popular <a href="http:/github.com">Github</a> service for our project, which is a private project.</p>
 
       <h3>Issue tracking with Asana</h3>
       <p>This is not exactly specific to our project "stack", but I believe they still earn a mention. So, here we ago: we use <a href="http://asana.com">Asana</a> for issue tracking.</p>
@@ -104,7 +104,8 @@
         We compile our application under the usual <code>out</code> folder, which seems to be hardcoded anyway. We use the <code>out</code> folder as our "web root".</p>
 
       <p>The particular controller action, which is responsible for serving the initial page, serves the HTML file from the <code>out</code> folder and dynamically fixes the paths prior to output.
-        We also create a symlink called <code>web/out/assets</code>, which points back to <code>web/assets</code> so that images and such can be referenced properly.</p>
+        We also create a symlink called <code>web/out/assets</code>, which points back to <code>web/assets</code> so that images and such can be referenced properly.
+        In newer Web UI versions there seem to be some support for better asset handling, but we haven't yet experimented with it closely enough due to bugs preventing us from upgrading.</p>
 
       <h3>Sessions</h3>
       <p>Since we rely on WebSockets heavily, we noticed that we can't really use the <code>HttpSession</code> class that Dart has, because it's specific to HTTP.
